@@ -1,8 +1,8 @@
 import { encrypt, verified } from "../../utils/bcrypt.handle.js";
-import { generateToken } from "../../utils/jwt.handle.js";
+import { generateToken,generateRefreshToken, verifyToken, verifyRefreshToken } from "../../utils/jwt.handle.js";
 import User, { IUser } from "../users/user_models.js";
 import { Auth } from "./auth_model.js";
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import axios from 'axios';
 
 const registerNewUser = async ({ email, password, name, age }: IUser) => {
@@ -21,17 +21,21 @@ const loginUser = async ({ email, password }: Auth) => {
     const checkIs = await User.findOne({ email });
     if(!checkIs) return "NOT_FOUND_USER";
 
-    const passwordHash = checkIs.password; //El encriptado que viene de la bbdd
-    const isCorrect = await verified(password, passwordHash);
+    const isCorrect = await verified(password, checkIs.password);
     if(!isCorrect) return "INCORRECT_PASSWORD";
 
-    const token = generateToken(checkIs.email);
-    const data = {
+    const token = generateToken(checkIs);
+    const refreshToken=generateRefreshToken(checkIs);
+    checkIs.refreshToken=refreshToken;
+    await checkIs.save();
+
+    return {
         token,
-        user: checkIs
+        refreshToken,
+       user: checkIs
     }
-    return data;
 };
+
 
 const googleAuth = async (code: string) => {
 
@@ -89,9 +93,13 @@ const googleAuth = async (code: string) => {
 
         // Genera el token JWT
         const token = generateToken(user.email);
+        const refreshToken=generateRefreshToken(user.email);
+
+        user.refreshToken=refreshToken;
+        await user.save();
 
         console.log(token);
-        return { token, user };
+        return { token, refreshToken, user };
 
     } catch (error: any) {
         console.error('Google Auth Error:', error.response?.data || error.message); // Log detallado
@@ -100,4 +108,22 @@ const googleAuth = async (code: string) => {
 };
 
 
-export { registerNewUser, loginUser, googleAuth };
+const refreshAccessToken = async (refreshToken: string) => {
+    try{
+        const decoded=verifyRefreshToken(refreshToken);
+        if (!decoded) return "INVALID_REFRESH_TOKEN";
+
+    const email=(decoded as JwtPayload).email;
+    const user = await User.findOne({email});
+
+    if (!user || user.refreshToken !== refreshToken) return "INVALID_REFRESH_TOKEN";
+
+    const newAccessToken = generateToken(user);
+    return { accessToken: newAccessToken };
+    }catch(error){
+        console.error("Error al refrescar token:", error);
+        return"INVALID_REFRESH_TOKEN";
+    }
+};
+
+export { registerNewUser, loginUser, googleAuth};

@@ -1,17 +1,45 @@
 import pkg from "jsonwebtoken";
 const { sign, verify } = pkg;   //Importamos las funciones sign y verify de la librería jsonwebtoken
 const JWT_SECRET = process.env.JWT_SECRET || "token.010101010101";
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh.010101010101";
 
+const ACCES_TOKEN_EXPIRATION="10s";
+const REFRESH_TOKEN_EXPIRATION="7d";
 //No debemos pasar información sensible en el payload, en este caso vamos a pasar como parametro el ID del usuario
-const generateToken = (id:string) => {
-    const jwt = sign({id}, JWT_SECRET, {expiresIn: '20s'});
+const generateToken = (user:any,additionalData:object={}) => {
+    const payload={
+        id:user.id,
+        name:user.name,
+        email:user.email,
+        role:user.role||"Admin",
+        ...additionalData
+    }
+    const jwt = sign(payload, JWT_SECRET, {expiresIn: ACCES_TOKEN_EXPIRATION});
+    return jwt;
+};
+
+const generateRefreshToken=(user:any,additionalData:object={})=>{
+    const payload={
+        id:user.id,
+        name:user.name,
+        email:user.email,
+        ...additionalData
+    }
+    const jwt=sign(payload,JWT_REFRESH_SECRET,{expiresIn:REFRESH_TOKEN_EXPIRATION});
     return jwt;
 };
 
 const verifyToken = (jwt: string) => {
-    const isOk = verify(jwt, JWT_SECRET);
-    return isOk;
-
+    try{
+        const isOk = verify(jwt, JWT_SECRET);
+        return isOk;
+    }catch(error){
+        return null;
+    }  
 };
 
-export { generateToken, verifyToken };
+const verifyRefreshToken=(refreshToken:string)=>{
+        return verify(refreshToken, JWT_REFRESH_SECRET);
+}
+
+export { generateToken, generateRefreshToken, verifyToken, verifyRefreshToken };

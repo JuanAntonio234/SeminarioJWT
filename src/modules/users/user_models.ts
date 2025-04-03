@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema(
             unique: true
         },
         googleId: { type: String },
+        refreshToken:{type:String},
     },
     {
         versionKey: false,
@@ -34,6 +35,7 @@ export interface IUser extends Auth{
     password: string;
     email: string;
     googleId: string;
+    refreshToken?:string;
     
 }
 
