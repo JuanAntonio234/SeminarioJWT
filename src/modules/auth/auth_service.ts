@@ -20,8 +20,9 @@ const registerNewUser = async ({ email, password, name, age }: IUser) => {
 const loginUser = async ({ email, password }: Auth) => {
     const checkIs = await User.findOne({ email });
     if(!checkIs) return "NOT_FOUND_USER";
-
-    const isCorrect = await verified(password, checkIs.password);
+    
+    const passwordHash = checkIs.password; //El encriptado que viene de la bbdd
+    const isCorrect = await verified(password, passwordHash);
     if(!isCorrect) return "INCORRECT_PASSWORD";
 
     const token = generateToken(checkIs);
@@ -32,7 +33,7 @@ const loginUser = async ({ email, password }: Auth) => {
     return {
         token,
         refreshToken,
-       user: checkIs
+        checkIs
     }
 };
 
@@ -92,8 +93,8 @@ const googleAuth = async (code: string) => {
         }
 
         // Genera el token JWT
-        const token = generateToken(user.email);
-        const refreshToken=generateRefreshToken(user.email);
+        const token = generateToken(user);
+        const refreshToken=generateRefreshToken(user);
 
         user.refreshToken=refreshToken;
         await user.save();
@@ -108,22 +109,5 @@ const googleAuth = async (code: string) => {
 };
 
 
-const refreshAccessToken = async (refreshToken: string) => {
-    try{
-        const decoded=verifyRefreshToken(refreshToken);
-        if (!decoded) return "INVALID_REFRESH_TOKEN";
-
-    const email=(decoded as JwtPayload).email;
-    const user = await User.findOne({email});
-
-    if (!user || user.refreshToken !== refreshToken) return "INVALID_REFRESH_TOKEN";
-
-    const newAccessToken = generateToken(user);
-    return { accessToken: newAccessToken };
-    }catch(error){
-        console.error("Error al refrescar token:", error);
-        return"INVALID_REFRESH_TOKEN";
-    }
-};
 
 export { registerNewUser, loginUser, googleAuth};
