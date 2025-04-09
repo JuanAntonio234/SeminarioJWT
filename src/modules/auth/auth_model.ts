@@ -4,3 +4,7 @@ export interface Auth {
     password:string;
     googleId?: string; 
 }
+export default interface IJwtPayload {
+    id: string;
+    type: 'access' | 'refresh';
+}

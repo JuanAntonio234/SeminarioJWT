@@ -2,7 +2,6 @@ import { encrypt, verified } from "../../utils/bcrypt.handle.js";
 import { generateToken,generateRefreshToken, verifyToken, verifyRefreshToken } from "../../utils/jwt.handle.js";
 import User, { IUser } from "../users/user_models.js";
 import { Auth } from "./auth_model.js";
-import jwt, { JwtPayload } from 'jsonwebtoken';
 import axios from 'axios';
 
 const registerNewUser = async ({ email, password, name, age }: IUser) => {
@@ -26,7 +25,7 @@ const loginUser = async ({ email, password }: Auth) => {
     if(!isCorrect) return "INCORRECT_PASSWORD";
 
     const token = generateToken(checkIs);
-    const refreshToken=generateRefreshToken(checkIs);
+    const refreshToken=generateRefreshToken(checkIs.id);
     checkIs.refreshToken=refreshToken;
     await checkIs.save();
 
@@ -94,7 +93,7 @@ const googleAuth = async (code: string) => {
 
         // Genera el token JWT
         const token = generateToken(user);
-        const refreshToken=generateRefreshToken(user);
+        const refreshToken=generateRefreshToken(user.id);
 
         user.refreshToken=refreshToken;
         await user.save();
@@ -108,6 +107,25 @@ const googleAuth = async (code: string) => {
     }
 };
 
+const refreshAccessToken = async (refreshToken: string) => {
+    try {
+        const decoded: any = verifyRefreshToken(refreshToken); 
+        if (!decoded || !decoded.id) {
+            throw new Error("Token no válido");
+        }
+
+        const user = await User.findById(decoded.id);
+
+        if (!user || user.refreshToken !== refreshToken) {
+            throw new Error("Refresh token inválido");
+        }
+
+        return generateToken(user); 
+
+    } catch (error: any) {
+        throw new Error("No se pudo refrescar el token");
+    }
+};
 
 
-export { registerNewUser, loginUser, googleAuth};
+export { registerNewUser, loginUser, googleAuth,refreshAccessToken};

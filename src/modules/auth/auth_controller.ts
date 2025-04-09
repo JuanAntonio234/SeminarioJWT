@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { registerNewUser, loginUser, googleAuth,refreshAccessToken } from "../auth/auth_service.js";
-import jwt from 'jsonwebtoken';
+
 const registerCtrl = async ({body}: Request, res: Response) => {
     try{
         const responseUser = await registerNewUser(body);
@@ -84,16 +84,8 @@ const refreshCtrl=async(req:Request, res:Response)=>{
     const refreshToken = req.body.refreshToken;
     if (!refreshToken) return res.status(400).json({ message: "Refresh token es requerido" });
     try{
-        const decoded: any = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!);
-        
-        const user={
-            id:decoded.id,
-            name:decoded.name,
-            email:decoded.email,
-            role:decoded.role||"Admin",
-        }
-        const newToken = await refreshAccessToken(user);
-        res.json({accesnewToken:newToken});
+        const newToken = await refreshAccessToken(refreshToken);
+        res.json({accessToken:newToken});
     }catch(error){
         return res.status(403).json({ message: "Refresh token inválido" });
 
