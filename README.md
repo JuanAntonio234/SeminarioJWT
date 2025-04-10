@@ -91,3 +91,12 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_OAUTH_REDIRECT_URL=http://localhost:9000/api/auth/google/callback
 ```
 14.- Assegurar que aquestes variables estiguin carregades abans d'iniciar el servidor, utilitzar per defecte npm start per fer RUN en el projecte (ruta per defecte per agafar les variables d'entorn integrada).
+
+
+Arxius 
+```
+https://dev.to/cristain/how-to-implement-jwt-authentication-using-node-express-typescript-app-2023-2c5o
+https://dev.to/tooleroid/jwt-authentication-in-nodejs-and-typescript-modern-web-development-guide-55b4
+https://nozzlegear.com/blog/implementing-a-jwt-auth-system-with-typescript-and-node
+ChatGPT
+Vídeos seminari
